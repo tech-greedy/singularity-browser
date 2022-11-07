@@ -1,6 +1,31 @@
 import { GetServerSideProps } from "next";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import Pager from "../../../components/Pager";
 
 export default function DatasetPage({ dataset }: any) {
+
+    const [cids, setCids] = useState<any>([]);
+
+    const router = useRouter();
+
+    useEffect(() => {
+      if(Array.isArray(dataset.cars)) {
+        setCids(dataset.cars);
+      }
+    }, [dataset])
+    
+    // Triggers fetch for new page
+    const handlePagination = (page: number) => {
+      const path = router.pathname
+      const query = router.query
+      query.page = page + "";
+      router.push({
+        pathname: path,
+        query: query,
+      })
+    }
+    
     return (
         <div className="px-4 sm:px-6 lg:px-8">
             <div className="sm:flex sm:items-center">
@@ -36,7 +61,7 @@ export default function DatasetPage({ dataset }: any) {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 bg-white">
-                                    {dataset.cars.map((car: any) => (
+                                    {cids.length > 0 && cids.map((car: any) => (
                                         <tr key={car._id}>
                                             <td className="py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 lg:pl-8">
                                                 {car.dataCid}
@@ -58,6 +83,9 @@ export default function DatasetPage({ dataset }: any) {
                             </table>
                         </div>
                     </div>
+                    <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+                        <Pager currentPage={dataset.pager.pageNumber} perPage={dataset.pager.perPage} total={dataset.pager.total} onPageChange={handlePagination} />
+                    </div>
                 </div>
             </div>
         </div>
@@ -65,8 +93,10 @@ export default function DatasetPage({ dataset }: any) {
 }
 
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-    let res = await fetch(`${process.env.BACKEND_URL}/api/dataset/${context.params?.id}`, {
+export const getServerSideProps: GetServerSideProps = async ( { query }) => {
+    const page = query.page || 1
+    console.log(page)
+    let res = await fetch(`${process.env.BACKEND_URL}/api/dataset/${query.id}?page=${page}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",

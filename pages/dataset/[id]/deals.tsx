@@ -3,9 +3,33 @@
  */
 
 import { GetServerSideProps } from "next";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import Pager from "../../../components/Pager";
 
 export default function DealsPage({ dealsObj }: any) {
+
+    const [deals, setDeals] = useState<any>([]);
+
+    const router = useRouter();
+
+    useEffect(() => {
+      if(Array.isArray(dealsObj.deals)) {
+        setDeals(dealsObj.deals);
+      }
+    }, [dealsObj])
+
+    // Triggers fetch for new page
+    const handlePagination = (page: number) => {
+      const path = router.pathname
+      const query = router.query
+      query.page = page + "";
+      router.push({
+        pathname: path,
+        query: query,
+      })
+    }
+
     return (
         <div className="px-4 sm:px-6 lg:px-8">
             <div className="sm:flex sm:items-center">
@@ -47,7 +71,7 @@ export default function DealsPage({ dealsObj }: any) {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 bg-white">
-                                    {dealsObj.deals.map((obj: any) => (
+                                    {deals.length > 0 && deals.map((obj: any) => (
                                         <tr key={obj.dealId}>
                                             <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 lg:pl-8">
                                                 {obj.dealId}
@@ -68,7 +92,7 @@ export default function DealsPage({ dealsObj }: any) {
                         </div>
                     </div>
                     <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
-                        <Pager currentPage={dealsObj.page} perPage={dealsObj.perPage} total={dealsObj.count} urlRoot={'/dataset/' + dealsObj.deals[0].datasetId + '/deals'} />
+                        <Pager currentPage={dealsObj.page} perPage={dealsObj.perPage} total={dealsObj.count} onPageChange={handlePagination} />
                     </div>
                 </div>
             </div>
@@ -77,19 +101,18 @@ export default function DealsPage({ dealsObj }: any) {
     )
 }
 
-
-export const getServerSideProps: GetServerSideProps = async (context) => {
-    let url = `${process.env.BACKEND_URL}/api/dataset/${context.params?.id}/deals`;
-    if (context.query.dataCid) {
-        url += `?dataCid=${context.query.dataCid}`;
+export const getServerSideProps: GetServerSideProps = async ( {query} ) => {
+    let url = `${process.env.BACKEND_URL}/api/dataset/${query.id}/deals`;
+    if (query.dataCid) {
+        url += `?dataCid=${query.dataCid}`;
     }
-    if (context.query.page) {
+    if (query.page) {
         if (url.indexOf('?') > 0) {
             url += '&';
         } else {
             url += '?';
         }
-        url += `page=${context.query.page}`;
+        url += `page=${query.page}`;
     }
 
     let res = await fetch(url, {
