@@ -30,7 +30,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
         const findCondition: FindCondition = { datasetId: datasetId, state: 'active' };
 
         if (dataCid) {
-            findCondition.dataCid = dataCid? dataCid[0]: dataCid;
+            findCondition.dataCid = Array.isArray(dataCid)? dataCid[0]: dataCid;
         }
 
         const count = await db
